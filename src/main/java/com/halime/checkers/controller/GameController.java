@@ -1,7 +1,8 @@
 package com.halime.checkers.controller;
 
+import com.halime.checkers.model.Board;
+import com.halime.checkers.model.Piece;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -9,187 +10,153 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
 
-public class GameController implements Initializable {
+public class GameController {
+
+    @FXML private GridPane boardGrid;
+    private Board board;
+    private Piece selectedPiece;
+    private boolean isRedTurn = true;
 
     @FXML
-    private GridPane boardGrid;
-
-    private final int TILE_SIZE = 50;
-    private final int ROWS = 8;
-    private final int COLS = 8;
-
-    private StackPane selectedCell = null;
-    private Circle selectedPiece = null;
-    private Color currentTurn = Color.RED;
-    private List<StackPane> highlightedCells = new ArrayList<>();
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public void initialize() {
+        board = new Board();
+        board.setupInitialBoard();
         drawBoard();
     }
 
+    //  Redraws the board and places pieces
     private void drawBoard() {
         boardGrid.getChildren().clear();
 
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                Color tileColor = (row + col) % 2 == 0 ? Color.BEIGE : Color.SADDLEBROWN;
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                StackPane cell = new StackPane();
+                Rectangle tile = new Rectangle(80, 80);
+                tile.setFill((row + col) % 2 == 0 ? Color.BEIGE : Color.SADDLEBROWN);
+                cell.getChildren().add(tile);
 
-                Rectangle tile = new Rectangle(TILE_SIZE, TILE_SIZE);
-                tile.setFill(tileColor);
-
-                StackPane cell = new StackPane(tile);
-                int finalRow = row;
-                int finalCol = col;
-
-                cell.setOnMouseClicked(e -> handleCellClick(finalRow, finalCol, cell));
-
-                boardGrid.add(cell, col, row);
-
-                // Place pieces at start
-                if (tileColor == Color.SADDLEBROWN) {
-                    if (row < 3) {
-                        Circle blackPiece = createPiece(Color.BLACK);
-                        cell.getChildren().add(blackPiece);
-                    } else if (row > 4) {
-                        Circle redPiece = createPiece(Color.RED);
-                        cell.getChildren().add(redPiece);
-                    }
+                Piece piece = board.getPiece(row, col);
+                if (piece != null) {
+                    Circle checker = new Circle(30);
+                    checker.setFill(piece.isRed() ? Color.RED : Color.BLACK);
+                    checker.setStroke(Color.WHITE);
+                    checker.setStrokeWidth(piece.isKing() ? 4 : 2);
+                    cell.getChildren().add(checker);
                 }
+
+                final int x = row;
+                final int y = col;
+                cell.setOnMouseClicked(e -> handleClick(x, y));
+                boardGrid.add(cell, col, row);
             }
+        }
+
+        // Highlight possible moves
+        if (selectedPiece != null) {
+            highlightValidMoves();
         }
     }
 
-    private Circle createPiece(Color color) {
-        Circle piece = new Circle(TILE_SIZE * 0.4);
-        piece.setFill(color);
-        piece.setStroke(Color.GOLD);
-        piece.setStrokeWidth(2);
-        return piece;
-    }
+    // Handles mouse clicks on the board
+    private void handleClick(int x, int y) {
+        Piece clickedPiece = board.getPiece(x, y);
 
-    private void handleCellClick(int row, int col, StackPane clickedCell) {
-        if (selectedPiece == null) {
-            // Selecting a piece
-            if (clickedCell.getChildren().size() > 1 && clickedCell.getChildren().get(1) instanceof Circle) {
-                Circle piece = (Circle) clickedCell.getChildren().get(1);
-                if (piece.getFill().equals(currentTurn)) {
-                    selectedCell = clickedCell;
-                    selectedPiece = piece;
-                    highlightMoves(row, col);
-                }
-            }
-        } else {
-            // Clicked on a highlighted cell to move
-            if (highlightedCells.contains(clickedCell)) {
-                movePieceTo(clickedCell);
+        if (selectedPiece != null && clickedPiece == null) {
+            int dx = x - selectedPiece.getRow();
+            int dy = y - selectedPiece.getCol();
+
+            // Normal move
+            if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
+                board.movePiece(selectedPiece, x, y);
                 switchTurn();
             }
-            clearHighlights();
+
+            // Jump move
+            else if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
+                int midX = selectedPiece.getRow() + dx / 2;
+                int midY = selectedPiece.getCol() + dy / 2;
+                Piece middlePiece = board.getPiece(midX, midY);
+
+                if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
+                    board.setPiece(midX, midY, null); // Remove captured piece
+                    board.movePiece(selectedPiece, x, y);
+                    switchTurn();
+                }
+            }
+
             selectedPiece = null;
-            selectedCell = null;
+            drawBoard();
+        }
+        else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
+            selectedPiece = clickedPiece;
+            drawBoard(); // Will highlight valid moves
         }
     }
 
-    private void highlightMoves(int row, int col) {
-        clearHighlights();
-        int direction = (currentTurn == Color.RED) ? -1 : 1;
-        boolean jumpAvailable = false;
+    // Highlights the legal destinations for a selected piece
+    private void highlightValidMoves() {
+        List<int[]> moves = getValidMoves(selectedPiece);
 
-        // Try jumps first
-        for (int d = -1; d <= 1; d += 2) {
-            int midRow = row + direction;
-            int midCol = col + d;
-            int jumpRow = row + 2 * direction;
-            int jumpCol = col + 2 * d;
+        for (int[] move : moves) {
+            int row = move[0];
+            int col = move[1];
 
-            if (isInBounds(midRow, midCol) && isInBounds(jumpRow, jumpCol)) {
-                StackPane midCell = getCell(midRow, midCol);
-                StackPane jumpCell = getCell(jumpRow, jumpCol);
-
-                if (midCell.getChildren().size() > 1 && jumpCell.getChildren().size() == 1) {
-                    Circle midPiece = (Circle) midCell.getChildren().get(1);
-                    if (!midPiece.getFill().equals(currentTurn)) {
-                        Rectangle highlight = new Rectangle(TILE_SIZE, TILE_SIZE);
-                        highlight.setFill(Color.YELLOW);
-                        highlight.setOpacity(0.4);
-                        jumpCell.getChildren().add(highlight);
-                        highlightedCells.add(jumpCell);
-                        jumpAvailable = true;
-                    }
-                }
-            }
-        }
-
-        // If no jump, allow normal diagonal move
-        if (!jumpAvailable) {
-            for (int d = -1; d <= 1; d += 2) {
-                int newRow = row + direction;
-                int newCol = col + d;
-
-                if (isInBounds(newRow, newCol)) {
-                    StackPane targetCell = getCell(newRow, newCol);
-                    if (targetCell.getChildren().size() == 1) {
-                        Rectangle highlight = new Rectangle(TILE_SIZE, TILE_SIZE);
-                        highlight.setFill(Color.YELLOW);
-                        highlight.setOpacity(0.4);
-                        targetCell.getChildren().add(highlight);
-                        highlightedCells.add(targetCell);
-                    }
+            for (javafx.scene.Node node : boardGrid.getChildren()) {
+                if (GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == col) {
+                    StackPane cell = (StackPane) node;
+                    Rectangle highlight = new Rectangle(80, 80);
+                    highlight.setFill(Color.TRANSPARENT);
+                    highlight.setStroke(Color.LIMEGREEN);
+                    highlight.setStrokeWidth(3);
+                    cell.getChildren().add(highlight);
                 }
             }
         }
     }
 
-    private void clearHighlights() {
-        for (StackPane cell : highlightedCells) {
-            if (cell.getChildren().size() > 1 &&
-                    cell.getChildren().get(cell.getChildren().size() - 1) instanceof Rectangle) {
-                cell.getChildren().remove(cell.getChildren().size() - 1);
+    //  Finds all valid move destinations for a piece
+    private List<int[]> getValidMoves(Piece piece) {
+        List<int[]> moves = new ArrayList<>();
+        int row = piece.getRow();
+        int col = piece.getCol();
+
+        int[][] directions = piece.isKing() ?
+                new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}} :
+                (piece.isRed() ? new int[][]{{-1, -1}, {-1, 1}} : new int[][]{{1, -1}, {1, 1}});
+
+        for (int[] dir : directions) {
+            int newRow = row + dir[0];
+            int newCol = col + dir[1];
+
+            // Normal move
+            if (isInBounds(newRow, newCol) && board.getPiece(newRow, newCol) == null) {
+                moves.add(new int[]{newRow, newCol});
+            }
+
+            // Jump move
+            int jumpRow = row + dir[0] * 2;
+            int jumpCol = col + dir[1] * 2;
+            if (isInBounds(jumpRow, jumpCol) && board.getPiece(jumpRow, jumpCol) == null) {
+                Piece middle = board.getPiece(row + dir[0], col + dir[1]);
+                if (middle != null && middle.isRed() != piece.isRed()) {
+                    moves.add(new int[]{jumpRow, jumpCol});
+                }
             }
         }
-        highlightedCells.clear();
+
+        return moves;
     }
 
-    private void movePieceTo(StackPane destinationCell) {
-        int fromRow = GridPane.getRowIndex(selectedCell);
-        int fromCol = GridPane.getColumnIndex(selectedCell);
-        int toRow = GridPane.getRowIndex(destinationCell);
-        int toCol = GridPane.getColumnIndex(destinationCell);
-
-        // Handle jumping
-        if (Math.abs(toRow - fromRow) == 2 && Math.abs(toCol - fromCol) == 2) {
-            int midRow = (fromRow + toRow) / 2;
-            int midCol = (fromCol + toCol) / 2;
-            StackPane midCell = getCell(midRow, midCol);
-            if (midCell.getChildren().size() > 1) {
-                midCell.getChildren().remove(1); // remove the jumped piece
-            }
-        }
-
-        selectedCell.getChildren().remove(selectedPiece);
-        destinationCell.getChildren().add(selectedPiece);
-    }
-
-    private void switchTurn() {
-        currentTurn = (currentTurn == Color.RED) ? Color.BLACK : Color.RED;
-    }
-
+    //  Checks if the position is on the board
     private boolean isInBounds(int row, int col) {
-        return row >= 0 && row < ROWS && col >= 0 && col < COLS;
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
-    private StackPane getCell(int row, int col) {
-        for (javafx.scene.Node node : boardGrid.getChildren()) {
-            if (GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == col) {
-                return (StackPane) node;
-            }
-        }
-        return null;
+    //  Switch turns between red and black
+    private void switchTurn() {
+        isRedTurn = !isRedTurn;
     }
 }
