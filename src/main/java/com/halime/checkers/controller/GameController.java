@@ -3,6 +3,8 @@ package com.halime.checkers.controller;
 import com.halime.checkers.model.Board;
 import com.halime.checkers.model.Piece;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -16,6 +18,9 @@ import java.util.List;
 public class GameController {
 
     @FXML private GridPane boardGrid;
+    @FXML private Label turnLabel;
+    @FXML private Button restartButton;
+
     private Board board;
     private Piece selectedPiece;
     private boolean isRedTurn = true;
@@ -25,9 +30,17 @@ public class GameController {
         board = new Board();
         board.setupInitialBoard();
         drawBoard();
+        updateTurnLabel();
+
+        restartButton.setOnAction(e -> {
+            board.setupInitialBoard();
+            isRedTurn = true;
+            selectedPiece = null;
+            drawBoard();
+            updateTurnLabel();
+        });
     }
 
-    //  Redraws the board and places pieces
     private void drawBoard() {
         boardGrid.getChildren().clear();
 
@@ -54,13 +67,11 @@ public class GameController {
             }
         }
 
-        // Highlight possible moves
         if (selectedPiece != null) {
             highlightValidMoves();
         }
     }
 
-    // Handles mouse clicks on the board
     private void handleClick(int x, int y) {
         Piece clickedPiece = board.getPiece(x, y);
 
@@ -68,44 +79,34 @@ public class GameController {
             int dx = x - selectedPiece.getRow();
             int dy = y - selectedPiece.getCol();
 
-            // Normal move
             if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
                 board.movePiece(selectedPiece, x, y);
+                selectedPiece = null;
                 switchTurn();
-            }
-
-            // Jump move
-            else if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
+            } else if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
                 int midX = selectedPiece.getRow() + dx / 2;
                 int midY = selectedPiece.getCol() + dy / 2;
                 Piece middlePiece = board.getPiece(midX, midY);
 
                 if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
-                    board.setPiece(midX, midY, null); // Remove captured piece
+                    board.setPiece(midX, midY, null);
                     board.movePiece(selectedPiece, x, y);
+                    selectedPiece = null;
                     switchTurn();
                 }
             }
-
-            selectedPiece = null;
             drawBoard();
-        }
-        else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
+        } else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
             selectedPiece = clickedPiece;
-            drawBoard(); // Will highlight valid moves
+            drawBoard();
         }
     }
 
-    // Highlights the legal destinations for a selected piece
     private void highlightValidMoves() {
         List<int[]> moves = getValidMoves(selectedPiece);
-
         for (int[] move : moves) {
-            int row = move[0];
-            int col = move[1];
-
             for (javafx.scene.Node node : boardGrid.getChildren()) {
-                if (GridPane.getRowIndex(node) == row && GridPane.getColumnIndex(node) == col) {
+                if (GridPane.getRowIndex(node) == move[0] && GridPane.getColumnIndex(node) == move[1]) {
                     StackPane cell = (StackPane) node;
                     Rectangle highlight = new Rectangle(80, 80);
                     highlight.setFill(Color.TRANSPARENT);
@@ -117,31 +118,27 @@ public class GameController {
         }
     }
 
-    //  Finds all valid move destinations for a piece
     private List<int[]> getValidMoves(Piece piece) {
         List<int[]> moves = new ArrayList<>();
         int row = piece.getRow();
         int col = piece.getCol();
 
-        int[][] directions = piece.isKing() ?
-                new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}} :
-                (piece.isRed() ? new int[][]{{-1, -1}, {-1, 1}} : new int[][]{{1, -1}, {1, 1}});
+        int[][] directions = piece.isKing()
+                ? new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
+                : (piece.isRed() ? new int[][]{{-1, -1}, {-1, 1}} : new int[][]{{1, -1}, {1, 1}});
 
         for (int[] dir : directions) {
             int newRow = row + dir[0];
             int newCol = col + dir[1];
-
-            // Normal move
             if (isInBounds(newRow, newCol) && board.getPiece(newRow, newCol) == null) {
                 moves.add(new int[]{newRow, newCol});
             }
 
-            // Jump move
             int jumpRow = row + dir[0] * 2;
             int jumpCol = col + dir[1] * 2;
             if (isInBounds(jumpRow, jumpCol) && board.getPiece(jumpRow, jumpCol) == null) {
-                Piece middle = board.getPiece(row + dir[0], col + dir[1]);
-                if (middle != null && middle.isRed() != piece.isRed()) {
+                Piece mid = board.getPiece(row + dir[0], col + dir[1]);
+                if (mid != null && mid.isRed() != piece.isRed()) {
                     moves.add(new int[]{jumpRow, jumpCol});
                 }
             }
@@ -150,13 +147,16 @@ public class GameController {
         return moves;
     }
 
-    //  Checks if the position is on the board
     private boolean isInBounds(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
-    //  Switch turns between red and black
     private void switchTurn() {
         isRedTurn = !isRedTurn;
+        updateTurnLabel();
+    }
+
+    private void updateTurnLabel() {
+        turnLabel.setText("Turn: " + (isRedTurn ? "Red" : "Black"));
     }
 }
