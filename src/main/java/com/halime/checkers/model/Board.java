@@ -1,5 +1,8 @@
 package com.halime.checkers.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Board {
     private Piece[][] board;
 
@@ -56,6 +59,31 @@ public class Board {
             piece.setKing(true);
             System.out.println("Promoted to KING!");
         }
+    }
+    public List<int[]> getJumpMoves(Piece piece) {
+        List<int[]> jumpMoves = new ArrayList<>();
+        int row = piece.getRow();
+        int col = piece.getCol();
+        int dir = piece.isRed() ? -1 : 1;
+
+        int[][] directions = piece.isKing() ?
+                new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}} :
+                new int[][]{{dir, -1}, {dir, 1}};
+
+        for (int[] d : directions) {
+            int middleRow = row + d[0];
+            int middleCol = col + d[1];
+            int targetRow = row + 2 * d[0];
+            int targetCol = col + 2 * d[1];
+
+            if (isValidPosition(targetRow, targetCol)) {
+                Piece middle = getPiece(middleRow, middleCol);
+                if (middle != null && middle.isRed() != piece.isRed() && getPiece(targetRow, targetCol) == null) {
+                    jumpMoves.add(new int[]{targetRow, targetCol});
+                }
+            }
+        }
+        return jumpMoves;
     }
 
 

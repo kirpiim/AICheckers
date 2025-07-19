@@ -25,6 +25,7 @@ public class GameController {
     private Piece selectedPiece;
     private boolean isRedTurn = true;
     private final List<Piece> allPieces = new ArrayList<>();
+    private Piece activeJumpingPiece = null;
 
     @FXML
     public void initialize() {
@@ -85,12 +86,18 @@ public class GameController {
 
             for (int[] move : validMoves) {
                 if (move[0] == x && move[1] == y) {
-                    int dx = x - selectedPiece.getRow();
-                    int dy = y - selectedPiece.getCol();
+                    int oldRow = selectedPiece.getRow();
+                    int oldCol = selectedPiece.getCol();
 
-                    if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
-                        int midX = selectedPiece.getRow() + dx / 2;
-                        int midY = selectedPiece.getCol() + dy / 2;
+                    int dx = x - oldRow;
+                    int dy = y - oldCol;
+
+                    // Check if this is a jump
+                    boolean isJump = Math.abs(dx) == 2 && Math.abs(dy) == 2;
+
+                    if (isJump) {
+                        int midX = oldRow + dx / 2;
+                        int midY = oldCol + dy / 2;
                         Piece middlePiece = board.getPiece(midX, midY);
 
                         if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
@@ -98,18 +105,33 @@ public class GameController {
                         }
                     }
 
+                    // Move the piece
                     board.movePiece(selectedPiece, x, y);
+
+                    if (isJump) {
+                        // Check for another jump
+                        List<int[]> additionalJumps = board.getJumpMoves(selectedPiece);
+                        if (!additionalJumps.isEmpty()) {
+                            highlightJumpMoves(additionalJumps);  // show next jump
+                            drawBoard();
+                            return;  // Do NOT switch turn, wait for next click
+                        }
+                    }
+
+                    // End turn
                     selectedPiece = null;
                     switchTurn();
                     drawBoard();
                     return;
                 }
             }
+
         } else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
             selectedPiece = clickedPiece;
             drawBoard();
         }
     }
+
 
 
     private void highlightValidMoves() {
@@ -188,7 +210,15 @@ public class GameController {
 
         return moves;
     }
-
+    private boolean tryDoubleJump(Piece piece) {
+        List<int[]> jumpMoves = board.getJumpMoves(piece); // You must already have a method like this
+        if (!jumpMoves.isEmpty()) {
+            highlightJumpMoves(jumpMoves); // Optional: show jump options
+            selectedPiece = piece;         // Allow another move
+            return true;
+        }
+        return false;
+    }
     private boolean isInBounds(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
@@ -201,4 +231,22 @@ public class GameController {
     private void updateTurnLabel() {
         turnLabel.setText("Turn: " + (isRedTurn ? "Red" : "Black"));
     }
+    private void highlightJumpMoves(List<int[]> jumpMoves) {
+        for (int[] move : jumpMoves) {
+            for (javafx.scene.Node node : boardGrid.getChildren()) {
+                if (GridPane.getRowIndex(node) == move[0] && GridPane.getColumnIndex(node) == move[1]) {
+                    StackPane cell = (StackPane) node;
+                    Rectangle highlight = new Rectangle(80, 80);
+                    highlight.setFill(Color.TRANSPARENT);
+                    highlight.setStroke(Color.ORANGERED);
+                    highlight.setStrokeWidth(3);
+                    cell.getChildren().add(highlight);
+                }
+            }
+        }
+    }
+
+
+
 }
+
