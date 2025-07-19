@@ -39,6 +39,9 @@ public class Piece {
     public void setCol(int col) {
         this.col = col;
     }
+    public void setKing(boolean king){
+        this.isKing = king;
+    }
 
     public String getColor() {
         return isRed ? "red" : "black";

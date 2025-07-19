@@ -43,8 +43,22 @@ public class Board {
         int oldCol = piece.getCol();
 
         board[oldRow][oldCol] = null;
+
+        // Set new position on the piece
+        piece.setRow(newRow);
+        piece.setCol(newCol);
+
+        // Place it on board
         setPiece(newRow, newCol, piece);
+
+        // Promote to King
+        if ((piece.isRed() && newRow == 0) || (!piece.isRed() && newRow == 7)) {
+            piece.setKing(true);
+            System.out.println("Promoted to KING!");
+        }
     }
+
+
 
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
