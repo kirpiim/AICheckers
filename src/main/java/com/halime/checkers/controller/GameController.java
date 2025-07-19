@@ -24,18 +24,21 @@ public class GameController {
     private Board board;
     private Piece selectedPiece;
     private boolean isRedTurn = true;
+    private final List<Piece> allPieces = new ArrayList<>();
 
     @FXML
     public void initialize() {
         board = new Board();
         board.setupInitialBoard();
+        selectedPiece = null;
+        isRedTurn = true;
         drawBoard();
         updateTurnLabel();
 
         restartButton.setOnAction(e -> {
             board.setupInitialBoard();
-            isRedTurn = true;
             selectedPiece = null;
+            isRedTurn = true;
             drawBoard();
             updateTurnLabel();
         });
@@ -43,6 +46,7 @@ public class GameController {
 
     private void drawBoard() {
         boardGrid.getChildren().clear();
+        allPieces.clear(); // Reset and repopulate
 
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -53,6 +57,7 @@ public class GameController {
 
                 Piece piece = board.getPiece(row, col);
                 if (piece != null) {
+                    allPieces.add(piece);
                     Circle checker = new Circle(30);
                     checker.setFill(piece.isRed() ? Color.RED : Color.BLACK);
                     checker.setStroke(Color.WHITE);
@@ -76,31 +81,36 @@ public class GameController {
         Piece clickedPiece = board.getPiece(x, y);
 
         if (selectedPiece != null && clickedPiece == null) {
-            int dx = x - selectedPiece.getRow();
-            int dy = y - selectedPiece.getCol();
+            List<int[]> validMoves = getValidMoves(selectedPiece);
 
-            if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
-                board.movePiece(selectedPiece, x, y);
-                selectedPiece = null;
-                switchTurn();
-            } else if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
-                int midX = selectedPiece.getRow() + dx / 2;
-                int midY = selectedPiece.getCol() + dy / 2;
-                Piece middlePiece = board.getPiece(midX, midY);
+            for (int[] move : validMoves) {
+                if (move[0] == x && move[1] == y) {
+                    int dx = x - selectedPiece.getRow();
+                    int dy = y - selectedPiece.getCol();
 
-                if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
-                    board.setPiece(midX, midY, null);
+                    if (Math.abs(dx) == 2 && Math.abs(dy) == 2) {
+                        int midX = selectedPiece.getRow() + dx / 2;
+                        int midY = selectedPiece.getCol() + dy / 2;
+                        Piece middlePiece = board.getPiece(midX, midY);
+
+                        if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
+                            board.setPiece(midX, midY, null); // capture
+                        }
+                    }
+
                     board.movePiece(selectedPiece, x, y);
                     selectedPiece = null;
                     switchTurn();
+                    drawBoard();
+                    return;
                 }
             }
-            drawBoard();
         } else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
             selectedPiece = clickedPiece;
             drawBoard();
         }
     }
+
 
     private void highlightValidMoves() {
         List<int[]> moves = getValidMoves(selectedPiece);
@@ -119,13 +129,45 @@ public class GameController {
     }
 
     private List<int[]> getValidMoves(Piece piece) {
+        return piece.isKing() ? getValidMovesForKing(piece) : getValidMovesForRegular(piece);
+    }
+
+    private List<int[]> getValidMovesForRegular(Piece piece) {
         List<int[]> moves = new ArrayList<>();
         int row = piece.getRow();
         int col = piece.getCol();
 
-        int[][] directions = piece.isKing()
-                ? new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
-                : (piece.isRed() ? new int[][]{{-1, -1}, {-1, 1}} : new int[][]{{1, -1}, {1, 1}});
+        int direction = piece.isRed() ? -1 : 1;
+        int[][] steps = {{direction, -1}, {direction, 1}};
+        int[][] jumps = {{direction * 2, -2}, {direction * 2, 2}};
+
+        for (int i = 0; i < steps.length; i++) {
+            int newRow = row + steps[i][0];
+            int newCol = col + steps[i][1];
+            if (isInBounds(newRow, newCol) && board.getPiece(newRow, newCol) == null) {
+                moves.add(new int[]{newRow, newCol});
+            }
+
+            int jumpRow = row + jumps[i][0];
+            int jumpCol = col + jumps[i][1];
+            if (isInBounds(jumpRow, jumpCol) && board.getPiece(jumpRow, jumpCol) == null) {
+                int midRow = row + steps[i][0];
+                int midCol = col + steps[i][1];
+                Piece mid = board.getPiece(midRow, midCol);
+                if (mid != null && mid.isRed() != piece.isRed()) {
+                    moves.add(new int[]{jumpRow, jumpCol});
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    private List<int[]> getValidMovesForKing(Piece piece) {
+        List<int[]> moves = new ArrayList<>();
+        int row = piece.getRow();
+        int col = piece.getCol();
+        int[][] directions = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
 
         for (int[] dir : directions) {
             int newRow = row + dir[0];
