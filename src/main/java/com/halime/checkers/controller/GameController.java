@@ -61,8 +61,14 @@ public class GameController {
                     allPieces.add(piece);
                     Circle checker = new Circle(30);
                     checker.setFill(piece.isRed() ? Color.RED : Color.BLACK);
-                    checker.setStroke(Color.WHITE);
-                    checker.setStrokeWidth(piece.isKing() ? 4 : 2);
+                    if (piece.isBigShot()) {
+                        checker.setStroke(Color.GOLD);
+                        checker.setStrokeWidth(5);
+                    } else {
+                        checker.setStroke(Color.WHITE);
+                        checker.setStrokeWidth(piece.isKing() ? 4 : 2);
+                    }
+
                     cell.getChildren().add(checker);
                 }
 
@@ -101,7 +107,12 @@ public class GameController {
                         Piece middlePiece = board.getPiece(midX, midY);
 
                         if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
-                            board.setPiece(midX, midY, null); // capture
+                            if (middlePiece.isBigShot()) {
+                                board.setPiece(midX, midY, null); // Remove it
+                                regenerateBigShot(middlePiece.isRed());
+                            } else {
+                                board.setPiece(midX, midY, null); // Normal capture
+                            }
                         }
                     }
 
@@ -126,6 +137,22 @@ public class GameController {
                 }
             }
 
+        } else if (selectedPiece != null && clickedPiece != null && selectedPiece.isBigShot() && clickedPiece.isRed() == selectedPiece.isRed()) {
+            int dx = clickedPiece.getRow() - selectedPiece.getRow();
+            int dy = clickedPiece.getCol() - selectedPiece.getCol();
+
+            // Only allow diagonally adjacent same-team pieces
+            if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
+                // Perform the Big Shot transfer
+                selectedPiece.setBigShot(false);
+                clickedPiece.setBigShot(true);
+
+                selectedPiece = null;
+                switchTurn();
+                drawBoard();
+                return;
+            }
+
         } else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
             selectedPiece = clickedPiece;
             drawBoard();
@@ -133,6 +160,23 @@ public class GameController {
     }
 
 
+    private void regenerateBigShot(boolean isRed) {
+        int backRow = isRed ? 7 : 0; // Red's back row is 7, Black's is 0
+        List<Integer> emptyCols = new ArrayList<>();
+
+        for (int col = 0; col < 8; col++) {
+            if (board.getPiece(backRow, col) == null) {
+                emptyCols.add(col);
+            }
+        }
+
+        if (!emptyCols.isEmpty()) {
+            int col = emptyCols.get((int) (Math.random() * emptyCols.size()));
+            Piece newBigShot = new Piece(isRed, backRow, col, true);
+            board.setPiece(backRow, col, newBigShot);
+            System.out.println("Big Shot regenerated at " + backRow + ", " + col);
+        }
+    }
 
     private void highlightValidMoves() {
         List<int[]> moves = getValidMoves(selectedPiece);
@@ -151,6 +195,9 @@ public class GameController {
     }
 
     private List<int[]> getValidMoves(Piece piece) {
+        if (piece.isBigShot()) {
+            return getValidMovesForBigShot(piece);
+        }
         return piece.isKing() ? getValidMovesForKing(piece) : getValidMovesForRegular(piece);
     }
 
@@ -210,6 +257,47 @@ public class GameController {
 
         return moves;
     }
+    private List<int[]> getValidMovesForBigShot(Piece piece) {
+        List<int[]> moves = new ArrayList<>();
+        int row = piece.getRow();
+        int col = piece.getCol();
+        boolean isRed = piece.isRed();
+
+        // All diagonal directions
+        int[][] directions = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+
+        for (int[] dir : directions) {
+            int newRow = row + dir[0];
+            int newCol = col + dir[1];
+
+            // 1. Move to empty space
+            if (isInBounds(newRow, newCol) && board.getPiece(newRow, newCol) == null) {
+                moves.add(new int[]{newRow, newCol});
+            }
+
+            // 2. Travel to adjacent same-team piece to transfer Big Shot
+            if (isInBounds(newRow, newCol)) {
+                Piece target = board.getPiece(newRow, newCol);
+                if (target != null && target.isRed() == isRed && !target.isBigShot()) {
+                    // Add this move as a transfer option (use special flag later)
+                    moves.add(new int[]{newRow, newCol});  // transfer move
+                }
+            }
+
+            // 3. Optional: still allow jumping like a King
+            int jumpRow = row + dir[0] * 2;
+            int jumpCol = col + dir[1] * 2;
+            if (isInBounds(jumpRow, jumpCol) && board.getPiece(jumpRow, jumpCol) == null) {
+                Piece mid = board.getPiece(row + dir[0], col + dir[1]);
+                if (mid != null && mid.isRed() != isRed) {
+                    moves.add(new int[]{jumpRow, jumpCol});
+                }
+            }
+        }
+
+        return moves;
+    }
+
     private boolean tryDoubleJump(Piece piece) {
         List<int[]> jumpMoves = board.getJumpMoves(piece); // You must already have a method like this
         if (!jumpMoves.isEmpty()) {
