@@ -4,6 +4,7 @@ public class Piece {
     private boolean isRed;
     private boolean isKing;
     private int row, col;
+    private boolean isBigShot;
 
     public Piece(boolean isRed, int row, int col) {
         this.isRed = isRed;
@@ -11,7 +12,13 @@ public class Piece {
         this.col = col;
         this.isKing = false;
     }
-
+    public Piece(boolean isRed, int row, int col, boolean isBigShot) {
+        this.isRed = isRed;
+        this.row = row;
+        this.col = col;
+        this.isKing = false;
+        this.isBigShot = isBigShot;
+    }
     public boolean isRed() {
         return isRed;
     }
@@ -19,7 +26,9 @@ public class Piece {
     public boolean isKing() {
         return isKing;
     }
-
+    public boolean isBigShot() {
+        return isBigShot;
+    }
     public void makeKing() {
         isKing = true;
     }
@@ -30,6 +39,13 @@ public class Piece {
 
     public int getCol() {
         return col;
+    }
+    public boolean isNormalPiece() {
+        return !isBigShot;
+    }
+
+    public void setBigShot(boolean bigShot) {
+        this.isBigShot = bigShot;
     }
 
     public void setRow(int row) {
