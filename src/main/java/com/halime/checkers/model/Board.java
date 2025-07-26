@@ -13,16 +13,28 @@ public class Board {
     public void setupInitialBoard() {
         for (int row = 0; row < 3; row++) {
             for (int col = (row + 1) % 2; col < 8; col += 2) {
-                board[row][col] = new Piece(false, row, col); // Black pieces
+                boolean isBigShot = (row == 0 && col == 1); // Use col 1 instead of 2
+                board[row][col] = new Piece(false, row, col, isBigShot);
+
+                if (isBigShot) {
+                    System.out.println("Black Big Shot placed at (" + row + "," + col + ")");
+                }
             }
         }
 
         for (int row = 5; row < 8; row++) {
             for (int col = (row + 1) % 2; col < 8; col += 2) {
-                board[row][col] = new Piece(true, row, col); // Red pieces
+                boolean isBigShot = (row == 7 && col == 0); // Use col 0 instead of 1
+                board[row][col] = new Piece(true, row, col, isBigShot);
+
+                if (isBigShot) {
+                    System.out.println("Red Big Shot placed at (" + row + "," + col + ")");
+                }
             }
         }
     }
+
+
 
     public Piece getPiece(int row, int col) {
         if (isValidPosition(row, col)) {
