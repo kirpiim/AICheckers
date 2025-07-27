@@ -160,23 +160,32 @@ public class GameController {
     }
 
 
-    private void regenerateBigShot(boolean isRed) {
-        int backRow = isRed ? 7 : 0; // Red's back row is 7, Black's is 0
-        List<Integer> emptyCols = new ArrayList<>();
+    public void regenerateBigShot(boolean isRed) {
+        int startRow = isRed ? 7 : 0;
+        int step = isRed ? -1 : 1;
 
-        for (int col = 0; col < 8; col++) {
-            if (board.getPiece(backRow, col) == null) {
-                emptyCols.add(col);
+        // Check up to 8 rows (from back row to front)
+        for (int row = startRow; row >= 0 && row <= 7; row += step) {
+            for (int col = 0; col < 8; col++) {
+                Piece candidate = board.getPiece(row, col);
+                boolean isDarkSquare = (row + col) % 2 != 0;
+
+                if (candidate != null) {
+                    System.out.println("Checking piece at (" + row + "," + col + ") | isRed=" + candidate.isRed() + ", isBigShot=" + candidate.isBigShot() + ", isDark=" + isDarkSquare);
+
+                    if (candidate.isRed() == isRed && !candidate.isBigShot() && isDarkSquare) {
+                        candidate.setBigShot(true);
+                        System.out.println((isRed ? "Red" : "Black") + " Big Shot regenerated at (" + row + "," + col + ")");
+                        return;
+                    }
+                }
             }
         }
 
-        if (!emptyCols.isEmpty()) {
-            int col = emptyCols.get((int) (Math.random() * emptyCols.size()));
-            Piece newBigShot = new Piece(isRed, backRow, col, true);
-            board.setPiece(backRow, col, newBigShot);
-            System.out.println("Big Shot regenerated at " + backRow + ", " + col);
-        }
+        System.out.println("No eligible piece found on board to convert into Big Shot.");
     }
+
+
 
     private void highlightValidMoves() {
         List<int[]> moves = getValidMoves(selectedPiece);
