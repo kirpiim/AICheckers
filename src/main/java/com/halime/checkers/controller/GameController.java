@@ -62,14 +62,30 @@ public class GameController {
                     Circle checker = new Circle(30);
                     checker.setFill(piece.isRed() ? Color.RED : Color.BLACK);
                     if (piece.isBigShot()) {
+                        // Gold outline for Big Shot
                         checker.setStroke(Color.GOLD);
                         checker.setStrokeWidth(5);
+                    } else if (piece.isKing()) {
+                        // Purple outline for King
+                        checker.setStroke(Color.PURPLE);
+                        checker.setStrokeWidth(5);
+
+                        // Add "K" text overlay
+                        javafx.scene.text.Text kingText = new javafx.scene.text.Text("K");
+                        kingText.setFill(Color.WHITE);
+                        kingText.setStyle("-fx-font-weight: bold; -fx-font-size: 24px;");
+
+                        // Add both checker and text now (no continue)
+                        cell.getChildren().addAll(checker, kingText);
                     } else {
                         checker.setStroke(Color.WHITE);
-                        checker.setStrokeWidth(piece.isKing() ? 4 : 2);
+                        checker.setStrokeWidth(2);
                     }
 
-                    cell.getChildren().add(checker);
+// If we didn't already add checker (non-King or non-BigShot), add it here
+                    if (!cell.getChildren().contains(checker)) {
+                        cell.getChildren().add(checker);
+                    }
                 }
 
                 final int x = row;
