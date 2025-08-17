@@ -1,6 +1,8 @@
 package com.halime.checkers.controller;
 
+import com.halime.checkers.controller.ai.CheckersAI;
 import com.halime.checkers.model.Board;
+import com.halime.checkers.model.Move;
 import com.halime.checkers.model.Piece;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -11,9 +13,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 
 public class GameController {
 
@@ -26,6 +31,7 @@ public class GameController {
     private boolean isRedTurn = true;
     private final List<Piece> allPieces = new ArrayList<>();
     private Piece activeJumpingPiece = null;
+    private CheckersAI aiPlayer;
 
     @FXML
     public void initialize() {
@@ -35,6 +41,7 @@ public class GameController {
         isRedTurn = true;
         drawBoard();
         updateTurnLabel();
+        aiPlayer = new CheckersAI(3);
 
         restartButton.setOnAction(e -> {
             board.setupInitialBoard();
@@ -149,6 +156,13 @@ public class GameController {
                     selectedPiece = null;
                     switchTurn();
                     drawBoard();
+
+                    // Trigger AI after human finishes move
+                    // If we just switched to Black (AI), trigger it
+                    if (!isRedTurn) {
+                        triggerAI();
+                    }
+
                     return;
                 }
             }
@@ -166,6 +180,10 @@ public class GameController {
                 selectedPiece = null;
                 switchTurn();
                 drawBoard();
+
+                // Trigger AI after transfer ends turn
+                triggerAI();
+
                 return;
             }
 
@@ -174,6 +192,25 @@ public class GameController {
             drawBoard();
         }
     }
+
+
+    private void triggerAI() {
+        // optional: 1s delay so it feels natural
+        PauseTransition pause = new PauseTransition(Duration.seconds(1));
+        pause.setOnFinished(ev -> {
+            // false = Black's turn
+            Move aiMove = aiPlayer.getBestMove(board, /*isRedTurn=*/false);
+            if (aiMove != null) {
+                executeMove(aiMove);   // this already moves, handles captures, updates UI, toggles turn
+            } else {
+                // (Optional) no moves = game over for AI
+                // turnLabel.setText("Black has no legal moves.");
+            }
+        });
+        pause.play();
+    }
+
+
 
 
     public void regenerateBigShot(boolean isRed) {
@@ -359,7 +396,53 @@ public class GameController {
         }
     }
 
+    private void executeMove(Move move) {
+        Piece piece = board.getPiece(move.getStartRow(), move.getStartCol());
 
+        if (piece != null) {
+            // Move the piece properly
+            board.movePiece(piece, move.getEndRow(), move.getEndCol());
 
+            // Remove captured pieces
+            for (Piece captured : move.getCapturedPieces()) {
+                board.removePiece(captured.getRow(), captured.getCol());
+
+                // If captured was a Big Shot, regenerate
+                if (captured.isBigShot()) {
+                    regenerateBigShot(captured.isRed());
+                }
+            }
+
+            // Refresh UI
+            updateBoardUI();
+        }
+
+        // Switch turn after AI moves
+        isRedTurn = !isRedTurn;
+    }
+
+    private void handlePlayerMove(Move move) {
+        executeMove(move); // apply the player's move
+
+        // Delay AI response slightly so it feels natural
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000); // 1 second delay
+            } catch (InterruptedException ignored) {}
+            javafx.application.Platform.runLater(this::handleAITurn);
+        }).start();
+    }
+
+    private void handleAITurn() {
+        Move bestMove = aiPlayer.getBestMove(board, isRedTurn); //Pass board & whose turn
+        if (bestMove != null) {
+            executeMove(bestMove); // Ymoves pieces based on a Move object
+        }
+    }
+
+    private void updateBoardUI() {
+        drawBoard();
+        updateTurnLabel();
+    }
 }
 
