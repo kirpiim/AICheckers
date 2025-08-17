@@ -98,9 +98,82 @@ public class Board {
         return jumpMoves;
     }
 
+    public void removePiece(int row, int col) {
+        if (row >= 0 && row < 8 && col >= 0 && col < 8) {
+            board[row][col] = null;
+        }
+    }
+
 
 
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
+
+    // Get all valid moves for current player
+    public List<Move> getAllValidMoves(boolean isRedTurn) {
+        List<Move> moves = new ArrayList<>();
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Piece piece = getPiece(row, col);
+                if (piece != null && piece.isRed() == isRedTurn) {
+                    moves.addAll(getValidMovesForPiece(piece));
+                }
+            }
+        }
+        return moves;
+    }
+
+    // Get valid moves for a single piece
+    private List<Move> getValidMovesForPiece(Piece piece) {
+        List<Move> moves = new ArrayList<>();
+        int row = piece.getRow();
+        int col = piece.getCol();
+        int direction = piece.isRed() ? -1 : 1;
+
+        // Normal diagonal moves
+        checkAndAddMove(moves, piece, row + direction, col - 1);
+        checkAndAddMove(moves, piece, row + direction, col + 1);
+
+        // King can move backwards
+        if (piece.isKing()) {
+            checkAndAddMove(moves, piece, row - direction, col - 1);
+            checkAndAddMove(moves, piece, row - direction, col + 1);
+        }
+
+        // Captures
+        addCaptureMoves(moves, piece, row, col);
+
+        return moves;
+    }
+
+    private void checkAndAddMove(List<Move> moves, Piece piece, int newRow, int newCol) {
+        if (isValidPosition(newRow, newCol) && getPiece(newRow, newCol) == null) {
+            moves.add(new Move(piece.getRow(), piece.getCol(), newRow, newCol));
+        }
+    }
+
+    private void addCaptureMoves(List<Move> moves, Piece piece, int row, int col) {
+        int[][] directions = {
+                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
+        };
+
+        for (int[] dir : directions) {
+            int midRow = row + dir[0];
+            int midCol = col + dir[1];
+            int landingRow = row + dir[0] * 2;
+            int landingCol = col + dir[1] * 2;
+
+            if (isValidPosition(landingRow, landingCol) && getPiece(landingRow, landingCol) == null) {
+                Piece middlePiece = getPiece(midRow, midCol);
+                if (middlePiece != null && middlePiece.isRed() != piece.isRed()) {
+                    Move captureMove = new Move(piece.getRow(), piece.getCol(), landingRow, landingCol);
+                    captureMove.addCapturedPiece(middlePiece);
+                    moves.add(captureMove);
+                }
+            }
+        }
+    }
+
 }
