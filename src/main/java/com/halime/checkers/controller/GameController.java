@@ -199,7 +199,8 @@ public class GameController {
         PauseTransition pause = new PauseTransition(Duration.seconds(1));
         pause.setOnFinished(ev -> {
             // false = Black's turn
-            Move aiMove = aiPlayer.getBestMove(board, /*isRedTurn=*/false);
+            int depth = 3;
+            Move aiMove = aiPlayer.getBestMove(board, depth,/*isRedTurn=*/false);
             if (aiMove != null) {
                 executeMove(aiMove);   // this already moves, handles captures, updates UI, toggles turn
             } else {
@@ -434,7 +435,8 @@ public class GameController {
     }
 
     private void handleAITurn() {
-        Move bestMove = aiPlayer.getBestMove(board, isRedTurn); //Pass board & whose turn
+        int depth = 3;
+        Move bestMove = aiPlayer.getBestMove(board, depth ,isRedTurn); //Pass board & whose turn
         if (bestMove != null) {
             executeMove(bestMove); // Ymoves pieces based on a Move object
         }
