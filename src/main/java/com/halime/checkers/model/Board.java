@@ -104,8 +104,42 @@ public class Board {
         }
     }
 
+    public Board copy() {
+        Board newBoard = new Board();
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                Piece piece = this.getPiece(row, col);
+                if (piece != null) {
 
+                    Piece cloned = new Piece(piece.isRed(), row, col, piece.isBigShot());
+                    cloned.setKing(piece.isKing());
+                    newBoard.setPiece(row, col, cloned);
+                }
+            }
+        }
+        return newBoard;
+    }
 
+    public void makeMove(Move move) {
+        Piece piece = getPiece(move.getStartRow(), move.getStartCol());
+        if (piece == null) return;
+
+        // Remove from old position
+        setPiece(move.getStartRow(), move.getStartCol(), null);
+
+        // Place piece in new position
+        setPiece(move.getEndRow(), move.getEndCol(), piece);
+
+        // Handle captures
+        for (Piece captured : move.getCapturedPieces()) {
+            setPiece(captured.getRow(), captured.getCol(), null);
+        }
+
+        // Crown promotion
+        if ((piece.isRed() && move.getEndRow() == 0) || (!piece.isRed() && move.getEndRow() == 7)) {
+            piece.setKing(true);
+        }
+    }
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
@@ -175,5 +209,37 @@ public class Board {
             }
         }
     }
+    public boolean isGameOver() {
+        // If either side has no pieces, game over
+        if (!hasPieces(true) || !hasPieces(false)) return true;
 
+        // If either side has no legal moves, game over
+        if (getAllValidMoves(true).isEmpty()) return true;   // Red stuck
+        if (getAllValidMoves(false).isEmpty()) return true;  // Black stuck
+
+        // Big Shot auto-win rule: if a Big Shot is now a King, game ends
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p != null && p.isBigShot() && p.isKing()) {
+                    System.out.println("Big Shot became King! Game over.");
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean hasPieces(boolean isRed) {
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                Piece p = board[r][c];
+                if (p != null && p.isRed() == isRed) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
