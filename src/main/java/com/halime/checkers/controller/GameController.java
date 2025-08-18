@@ -32,7 +32,12 @@ public class GameController {
     private final List<Piece> allPieces = new ArrayList<>();
     private Piece activeJumpingPiece = null;
     private CheckersAI aiPlayer;
+    private int aiDepth;
 
+    public void setAiDepth(int depth) {
+        this.aiDepth = depth;
+        this.aiPlayer = new CheckersAI(depth); // rebuild AI with new depth
+    }
     @FXML
     public void initialize() {
         board = new Board();
@@ -41,7 +46,10 @@ public class GameController {
         isRedTurn = true;
         drawBoard();
         updateTurnLabel();
-        aiPlayer = new CheckersAI(3);
+        // Only initialize aiPlayer if it wasn’t already set by setAiDepth
+        if (aiPlayer == null) {
+            aiPlayer = new CheckersAI(aiDepth);
+        }
 
         restartButton.setOnAction(e -> {
             board.setupInitialBoard();
@@ -89,7 +97,7 @@ public class GameController {
                         checker.setStrokeWidth(2);
                     }
 
-// If we didn't already add checker (non-King or non-BigShot), add it here
+
                     if (!cell.getChildren().contains(checker)) {
                         cell.getChildren().add(checker);
                     }
@@ -199,13 +207,9 @@ public class GameController {
         PauseTransition pause = new PauseTransition(Duration.seconds(1));
         pause.setOnFinished(ev -> {
             // false = Black's turn
-            int depth = 3;
-            Move aiMove = aiPlayer.getBestMove(board, depth,/*isRedTurn=*/false);
+            Move aiMove = aiPlayer.getBestMove(board, aiDepth,/*isRedTurn=*/false);
             if (aiMove != null) {
                 executeMove(aiMove);   // this already moves, handles captures, updates UI, toggles turn
-            } else {
-                // (Optional) no moves = game over for AI
-                // turnLabel.setText("Black has no legal moves.");
             }
         });
         pause.play();
@@ -430,17 +434,11 @@ public class GameController {
             try {
                 Thread.sleep(1000); // 1 second delay
             } catch (InterruptedException ignored) {}
-            javafx.application.Platform.runLater(this::handleAITurn);
+            javafx.application.Platform.runLater(this::triggerAI);
         }).start();
     }
 
-    private void handleAITurn() {
-        int depth = 3;
-        Move bestMove = aiPlayer.getBestMove(board, depth ,isRedTurn); //Pass board & whose turn
-        if (bestMove != null) {
-            executeMove(bestMove); // Ymoves pieces based on a Move object
-        }
-    }
+
 
     private void updateBoardUI() {
         drawBoard();
