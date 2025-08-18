@@ -15,7 +15,7 @@ public class MainMenuController {
     @FXML
     public void startGame(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/halime/checkers/view/game.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/halime/checkers/view/instruction.fxml"));
             Scene gameScene = new Scene(loader.load());
             Stage stage = (Stage) startGameButton.getScene().getWindow();
             stage.setScene(gameScene);
