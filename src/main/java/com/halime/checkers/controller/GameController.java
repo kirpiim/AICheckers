@@ -118,6 +118,7 @@ public class GameController {
     private void handleClick(int x, int y) {
         Piece clickedPiece = board.getPiece(x, y);
 
+        // --- A) Clicked an empty tile while a piece is selected ---
         if (selectedPiece != null && clickedPiece == null) {
             List<int[]> validMoves = getValidMoves(selectedPiece);
 
@@ -129,57 +130,56 @@ public class GameController {
                     int dx = x - oldRow;
                     int dy = y - oldCol;
 
-                    // Check if this is a jump
                     boolean isJump = Math.abs(dx) == 2 && Math.abs(dy) == 2;
-
                     if (isJump) {
                         int midX = oldRow + dx / 2;
                         int midY = oldCol + dy / 2;
                         Piece middlePiece = board.getPiece(midX, midY);
-
                         if (middlePiece != null && middlePiece.isRed() != selectedPiece.isRed()) {
                             if (middlePiece.isBigShot()) {
-                                board.setPiece(midX, midY, null); // Remove it
+                                board.setPiece(midX, midY, null);
                                 regenerateBigShot(middlePiece.isRed());
                             } else {
-                                board.setPiece(midX, midY, null); // Normal capture
+                                board.setPiece(midX, midY, null);
                             }
                         }
                     }
 
-                    // Move the piece
                     board.movePiece(selectedPiece, x, y);
 
                     if (isJump) {
-                        // Check for another jump
                         List<int[]> additionalJumps = board.getJumpMoves(selectedPiece);
                         if (!additionalJumps.isEmpty()) {
-                            highlightJumpMoves(additionalJumps);  // show next jump
+                            highlightJumpMoves(additionalJumps);
                             drawBoard();
-                            return;  // Do NOT switch turn, wait for next click
+                            return; // wait for next jump click
                         }
                     }
 
-                    // End turn
                     selectedPiece = null;
                     switchTurn();
                     drawBoard();
 
-                    // Trigger AI after human finishes move
-                    // If we just switched to Black (AI), trigger it
                     if (!isRedTurn) {
                         triggerAI();
                     }
-
                     return;
                 }
             }
 
-        } else if (selectedPiece != null && clickedPiece != null && selectedPiece.isBigShot() && clickedPiece.isRed() == selectedPiece.isRed()) {
+            // ❌ Not a valid destination → just deselect
+            selectedPiece = null;
+            drawBoard();
+            return;
+        }
+
+        // --- B) Big Shot transfer: only when clicking an ADJACENT same-color piece ---
+        if (selectedPiece != null && selectedPiece.isBigShot() && clickedPiece != null
+                && clickedPiece.isRed() == selectedPiece.isRed()) {
+
             int dx = clickedPiece.getRow() - selectedPiece.getRow();
             int dy = clickedPiece.getCol() - selectedPiece.getCol();
 
-            // Only allow diagonally adjacent same-team pieces
             if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
                 // Perform the Big Shot transfer
                 selectedPiece.setBigShot(false);
@@ -188,32 +188,52 @@ public class GameController {
                 selectedPiece = null;
                 switchTurn();
                 drawBoard();
-
-                // Trigger AI after transfer ends turn
-                triggerAI();
-
+                triggerAI(); // AI after transfer
                 return;
             }
 
-        } else if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
-            selectedPiece = clickedPiece;
+            // Not adjacent → treat like normal selection toggle
+            if (clickedPiece == selectedPiece) {
+                selectedPiece = null;
+            } else {
+                selectedPiece = clickedPiece;
+            }
+            drawBoard();
+            return;
+        }
+
+        // --- C) Normal select/deselect (non-Big Shot or enemy piece click) ---
+        if (clickedPiece != null && clickedPiece.isRed() == isRedTurn) {
+            if (selectedPiece == clickedPiece) {
+                selectedPiece = null; // deselect same piece
+            } else {
+                selectedPiece = clickedPiece; // select/switch
+            }
+            drawBoard();
+            return;
+        }
+
+        // Optional: clicking an enemy piece while something is selected → deselect
+        if (selectedPiece != null && clickedPiece != null && clickedPiece.isRed() != isRedTurn) {
+            selectedPiece = null;
             drawBoard();
         }
     }
 
 
+
+
     private void triggerAI() {
-        // optional: 1s delay so it feels natural
         PauseTransition pause = new PauseTransition(Duration.seconds(1));
         pause.setOnFinished(ev -> {
-            // false = Black's turn
-            Move aiMove = aiPlayer.getBestMove(board, aiDepth,/*isRedTurn=*/false);
+            Move aiMove = aiPlayer.getBestMove(board, aiDepth, /*isRedTurn=*/false);
             if (aiMove != null) {
-                executeMove(aiMove);   // this already moves, handles captures, updates UI, toggles turn
+                executeMove(aiMove, /*isAiMove*/ true);  // <- important
             }
         });
         pause.play();
     }
+
 
 
 
@@ -273,17 +293,23 @@ public class GameController {
         int row = piece.getRow();
         int col = piece.getCol();
 
+        // Red moves "up" (row decreasing), Black moves "down" (row increasing)
         int direction = piece.isRed() ? -1 : 1;
+
+        // Only forward diagonals
         int[][] steps = {{direction, -1}, {direction, 1}};
         int[][] jumps = {{direction * 2, -2}, {direction * 2, 2}};
 
         for (int i = 0; i < steps.length; i++) {
             int newRow = row + steps[i][0];
             int newCol = col + steps[i][1];
+
+            // Normal move
             if (isInBounds(newRow, newCol) && board.getPiece(newRow, newCol) == null) {
                 moves.add(new int[]{newRow, newCol});
             }
 
+            // Capture move
             int jumpRow = row + jumps[i][0];
             int jumpCol = col + jumps[i][1];
             if (isInBounds(jumpRow, jumpCol) && board.getPiece(jumpRow, jumpCol) == null) {
@@ -401,43 +427,94 @@ public class GameController {
         }
     }
 
-    private void executeMove(Move move) {
+    private void executeMove(Move move, boolean isAiMove) {
         Piece piece = board.getPiece(move.getStartRow(), move.getStartCol());
+        if (piece == null) return;
 
-        if (piece != null) {
-            // Move the piece properly
-            board.movePiece(piece, move.getEndRow(), move.getEndCol());
+        // Apply the first move
+        applySingleMove(piece, move.getEndRow(), move.getEndCol(), move.getCapturedPieces());
 
-            // Remove captured pieces
-            for (Piece captured : move.getCapturedPieces()) {
+        boolean didCapture = move.getCapturedPieces() != null && !move.getCapturedPieces().isEmpty();
+
+        if (didCapture) {
+            if (isAiMove) {
+                // --- AI: auto-chain with delays ---
+                continueAIMultiJump(piece);
+                return; // defer finishing the turn until AI is done
+            } else {
+                // --- Player: keep interactive double-jump UX ---
+                List<int[]> jumpMoves = board.getJumpMoves(piece);
+                if (jumpMoves != null && !jumpMoves.isEmpty()) {
+                    highlightJumpMoves(jumpMoves);
+                    selectedPiece = piece;   // let the player click the next jump
+                    return;                  // don't switch turn yet
+                }
+            }
+        }
+
+        // Finish the turn
+        finishTurn();
+    }
+
+    // Helper for AI multi-jumps with delay
+    private void continueAIMultiJump(Piece piece) {
+        List<int[]> extraJumps = board.getJumpMoves(piece);
+        if (extraJumps == null || extraJumps.isEmpty()) {
+            // No more jumps -> finish turn
+            finishTurn();
+            return;
+        }
+
+        // Take the first available jump (simple AI)
+        int[] dest = extraJumps.get(0);
+        int curRow = piece.getRow();
+        int curCol = piece.getCol();
+        int newRow = dest[0];
+        int newCol = dest[1];
+
+        int midRow = (curRow + newRow) / 2;
+        int midCol = (curCol + newCol) / 2;
+        Piece captured = board.getPiece(midRow, midCol);
+
+        List<Piece> capturedList = new ArrayList<>();
+        if (captured != null) capturedList.add(captured);
+
+        // Delay before executing next jump
+        PauseTransition pause = new PauseTransition(Duration.seconds(1));
+        pause.setOnFinished(e -> {
+            applySingleMove(piece, newRow, newCol, capturedList);
+            drawBoard();
+            continueAIMultiJump(piece); // recursive chain with delay
+        });
+        pause.play();
+    }
+
+    private void finishTurn() {
+        selectedPiece = null;
+        switchTurn();
+        drawBoard();
+
+        // Trigger AI if it’s Black’s turn
+        if (!isRedTurn) {
+            triggerAI();
+        }
+    }
+
+
+    private void applySingleMove(Piece piece, int endRow, int endCol, List<Piece> capturedPieces) {
+        board.movePiece(piece, endRow, endCol);
+
+        if (capturedPieces != null) {
+            for (Piece captured : capturedPieces) {
+                if (captured == null) continue;
                 board.removePiece(captured.getRow(), captured.getCol());
-
-                // If captured was a Big Shot, regenerate
                 if (captured.isBigShot()) {
                     regenerateBigShot(captured.isRed());
                 }
             }
-
-            // Refresh UI
-            updateBoardUI();
         }
-
-        // Switch turn after AI moves
-        isRedTurn = !isRedTurn;
+        updateBoardUI();
     }
-
-    private void handlePlayerMove(Move move) {
-        executeMove(move); // apply the player's move
-
-        // Delay AI response slightly so it feels natural
-        new Thread(() -> {
-            try {
-                Thread.sleep(1000); // 1 second delay
-            } catch (InterruptedException ignored) {}
-            javafx.application.Platform.runLater(this::triggerAI);
-        }).start();
-    }
-
 
 
     private void updateBoardUI() {
