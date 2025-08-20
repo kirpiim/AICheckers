@@ -13,11 +13,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="TOP_CENTER" spacing="10"
-      xmlns="http://javafx.com/javafx/23.0.1"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.halime.checkers.controller.GameController"
-      stylesheets="@/com/halime/checkers/css/game.css">
+<VBox alignment="TOP_CENTER" spacing="10" stylesheets="@/com/halime/checkers/css/game.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.halime.checkers.controller.GameController">
 
   <MenuBar VBox.vgrow="NEVER">
     <menus>
@@ -48,22 +44,9 @@
 
   <AnchorPane prefWidth="856.0" VBox.vgrow="ALWAYS">
     <!-- Removed inline style, now only uses CSS class -->
-    <Label fx:id="turnLabel"
-           styleClass="turn-label"
-           layoutX="26.0"
-           layoutY="234.0"
-           text="Turn: Red" />
+    <Label fx:id="turnLabel" layoutX="26.0" layoutY="234.0" styleClass="turn-label" text="Turn: Red" />
 
-    <GridPane fx:id="boardGrid"
-              layoutX="135.0"
-              layoutY="68.0"
-              prefHeight="523.0"
-              prefWidth="707.0"
-              styleClass="board-grid"
-              AnchorPane.bottomAnchor="69.0"
-              AnchorPane.leftAnchor="135.0"
-              AnchorPane.rightAnchor="14.0"
-              AnchorPane.topAnchor="68.0">
+    <GridPane fx:id="boardGrid" layoutX="102.0" layoutY="30.0" prefHeight="585.0" prefWidth="740.0" styleClass="board-grid" AnchorPane.bottomAnchor="45.0" AnchorPane.leftAnchor="102.0" AnchorPane.rightAnchor="14.0" AnchorPane.topAnchor="30.0">
 
       <columnConstraints>
         <ColumnConstraints percentWidth="12.5" />
@@ -87,10 +70,6 @@
       </rowConstraints>
     </GridPane>
 
-    <Button fx:id="restartButton"
-            layoutX="32.0"
-            layoutY="338.0"
-            text="Restart"
-            styleClass="restart-button"/>
+    <Button fx:id="restartButton" layoutX="32.0" layoutY="338.0" styleClass="restart-button" text="Restart" />
   </AnchorPane>
 </VBox>
