@@ -189,9 +189,20 @@ public class Board {
     }
 
     private void addCaptureMoves(List<Move> moves, Piece piece, int row, int col) {
-        int[][] directions = {
-                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
-        };
+        int[][] directions;
+
+        if (piece.isKing()) {
+            // Kings can move in all directions
+            directions = new int[][] {
+                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
+            };
+        } else {
+            // Normal pieces can only move forward
+            int direction = piece.isRed() ? -1 : 1;
+            directions = new int[][] {
+                    {direction, -1}, {direction, 1}
+            };
+        }
 
         for (int[] dir : directions) {
             int midRow = row + dir[0];
@@ -209,6 +220,7 @@ public class Board {
             }
         }
     }
+
     public boolean isGameOver() {
         // If either side has no pieces, game over
         if (!hasPieces(true) || !hasPieces(false)) return true;
