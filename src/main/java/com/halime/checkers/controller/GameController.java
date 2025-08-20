@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.paint.ImagePattern;
+import java.util.Objects;
 
 public class GameController {
 
@@ -44,6 +48,7 @@ public class GameController {
         board.setupInitialBoard();
         selectedPiece = null;
         isRedTurn = true;
+
         drawBoard();
         updateTurnLabel();
         // Only initialize aiPlayer if it wasn’t already set by setAiDepth
@@ -68,39 +73,29 @@ public class GameController {
             for (int col = 0; col < 8; col++) {
                 StackPane cell = new StackPane();
                 Rectangle tile = new Rectangle(80, 80);
-                tile.setFill((row + col) % 2 == 0 ? Color.BEIGE : Color.SADDLEBROWN);
+                tile.setFill((row + col) % 2 == 0 ? Color.web("#ffffff") : Color.web("#96a2b3"));
                 cell.getChildren().add(tile);
 
                 Piece piece = board.getPiece(row, col);
                 if (piece != null) {
                     allPieces.add(piece);
-                    Circle checker = new Circle(30);
-                    checker.setFill(piece.isRed() ? Color.RED : Color.BLACK);
+
+                    // Pick correct image based on piece type
+                    String imagePath;
                     if (piece.isBigShot()) {
-                        // Gold outline for Big Shot
-                        checker.setStroke(Color.GOLD);
-                        checker.setStrokeWidth(5);
+                        imagePath = piece.isRed() ? "/com/halime/checkers/images/red_bigshot.png" : "/com/halime/checkers/images/blue_bigshot.png";
                     } else if (piece.isKing()) {
-                        // Purple outline for King
-                        checker.setStroke(Color.PURPLE);
-                        checker.setStrokeWidth(5);
-
-                        // Add "K" text overlay
-                        javafx.scene.text.Text kingText = new javafx.scene.text.Text("K");
-                        kingText.setFill(Color.WHITE);
-                        kingText.setStyle("-fx-font-weight: bold; -fx-font-size: 24px;");
-
-                        // Add both checker and text now (no continue)
-                        cell.getChildren().addAll(checker, kingText);
+                        imagePath = piece.isRed() ? "/com/halime/checkers/images/red_king.png" : "/com/halime/checkers/images/blue_king.png";
                     } else {
-                        checker.setStroke(Color.WHITE);
-                        checker.setStrokeWidth(2);
+                        imagePath = piece.isRed() ? "/com/halime/checkers/images/red_piece.png" : "/com/halime/checkers/images/blue_piece.png";
                     }
 
+                    ImageView pieceView = new ImageView(new Image(getClass().getResourceAsStream(imagePath)));
+                    pieceView.setFitWidth(70);
+                    pieceView.setFitHeight(70);
+                    pieceView.setPreserveRatio(true);
 
-                    if (!cell.getChildren().contains(checker)) {
-                        cell.getChildren().add(checker);
-                    }
+                    cell.getChildren().add(pieceView);
                 }
 
                 final int x = row;
@@ -114,6 +109,7 @@ public class GameController {
             highlightValidMoves();
         }
     }
+
 
     private void handleClick(int x, int y) {
         Piece clickedPiece = board.getPiece(x, y);
@@ -503,7 +499,11 @@ public class GameController {
 
     private void applySingleMove(Piece piece, int endRow, int endCol, List<Piece> capturedPieces) {
         board.movePiece(piece, endRow, endCol);
-
+        // Immediately check if Big Shot or other game over happened
+        if (board.isGameOver()) {
+            endGame(piece.isRed(), "Big Shot crowned");
+            return;
+        }
         if (capturedPieces != null) {
             for (Piece captured : capturedPieces) {
                 if (captured == null) continue;
@@ -515,7 +515,14 @@ public class GameController {
         }
         updateBoardUI();
     }
+    private void endGame(boolean redWon, String reason) {
+        String winner = redWon ? "Red" : "Black";
+        turnLabel.setText("Game Over! " + winner + " wins (" + reason + ")");
 
+        // Disable further clicks on the board
+        boardGrid.setDisable(true);
+        restartButton.setDisable(false);
+    }
 
     private void updateBoardUI() {
         drawBoard();
