@@ -46,10 +46,10 @@
 
   <AnchorPane fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0" VBox.vgrow="ALWAYS">
     <Rectangle arcHeight="5.0" arcWidth="5.0" height="660.0" layoutX="235.0" layoutY="57.0" stroke="BLACK" strokeType="INSIDE" width="905.0" />
-    <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffedec" height="82.0" layoutX="14.0" layoutY="250.0" stroke="BLACK" strokeType="INSIDE" width="163.0" />
+    <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffedec" height="161.0" layoutX="14.0" layoutY="250.0" stroke="BLACK" strokeType="INSIDE" width="178.0" />
 
     <!-- Turn label -->
-    <Label fx:id="turnLabel" layoutX="44.0" layoutY="247.0" prefHeight="88.0" prefWidth="104.0" styleClass="turn-label" text="Turn: Red">
+    <Label fx:id="turnLabel" layoutX="23.0" layoutY="252.0" prefHeight="135.0" prefWidth="161.0" styleClass="turn-label" text="Turn: Red">
       <font>
         <Font size="24.0" />
       </font>
@@ -78,12 +78,8 @@
         <RowConstraints percentHeight="12.5" />
       </rowConstraints>
     </GridPane>
-
-    <!-- Restart button (always available) -->
-    <Button fx:id="restartButton" layoutX="46.0" layoutY="400.0" styleClass="restart-button" text="Restart" />
       <Button fx:id="playAgainButton" layoutX="46.0" layoutY="547.0" onAction="#handlePlayAgain" styleClass="restart-button" text="Play Again" visible="false" />
-      <Rectangle fx:id="winorlose" arcHeight="5.0" arcWidth="5.0" fill="#ffedec" height="82.0" layoutX="6.0" layoutY="450.0" stroke="BLACK" strokeType="INSIDE" width="163.0" />
-      <Label fx:id="statusLabel" layoutX="16.0" layoutY="447.0" prefHeight="88.0" prefWidth="163.0" styleClass="turn-label" text="You WIN!">
+      <Label fx:id="statusLabel" layoutX="35.0" layoutY="447.0" prefHeight="88.0" prefWidth="144.0" styleClass="turn-label" text="You WIN!">
          <font>
             <Font size="24.0" />
          </font>
