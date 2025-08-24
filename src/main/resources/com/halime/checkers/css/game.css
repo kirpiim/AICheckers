@@ -6,13 +6,42 @@
     -fx-font-size: 36px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c3e50;
+    -fx-font-family: "Consolas", "Courier New", monospace;
 }
 
 .turn-label {
     -fx-font-size: 20px;
     -fx-text-fill: #2980b9;
+    -fx-font-family: "Consolas", "Courier New", monospace;
 }
 
-.stack-pane {
-    -fx-alignment: center;
+/* Common retro button style */
+.button, .toggle-button {
+    -fx-font-size: 14px;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-text-fill: white;
+    -fx-background-color: #7c9bba;   /* Default */
+    -fx-background-radius: 0;        /* Sharp retro edges */
+    -fx-border-color: black;
+    -fx-border-width: 3px;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+}
+
+/* Pressed effect for both */
+.button:pressed, .toggle-button:pressed {
+    -fx-background-color: #476685;
+    -fx-translate-y: 2;
+    -fx-border-color: black;
+}
+
+/* Hover effect */
+.button:hover, .toggle-button:hover {
+    -fx-background-color: #6b86a5;
+}
+
+/* When toggle is selected */
+.toggle-button:selected {
+    -fx-background-color: #476685; /* same as pressed */
+    -fx-border-color: black;
 }
