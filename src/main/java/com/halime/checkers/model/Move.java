@@ -41,4 +41,7 @@ public class Move {
     public void addCapturedPiece(Piece piece) {
         capturedPieces.add(piece);
     }
+    public boolean isCapture() {
+        return !capturedPieces.isEmpty();
+    }
 }
