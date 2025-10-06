@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 
 import javafx.scene.control.ToggleButton;
@@ -59,4 +60,18 @@ public class DifficultyController {
             e.printStackTrace();
         }
     }
+    @FXML
+    private void handleMainMenu(javafx.event.ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/halime/checkers/view/main_menu.fxml"));
+            Scene menuScene = new Scene(loader.load());
+
+            Stage stage = (Stage) ((MenuItem) event.getSource()).getParentPopup().getOwnerWindow();
+            stage.setScene(menuScene);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
