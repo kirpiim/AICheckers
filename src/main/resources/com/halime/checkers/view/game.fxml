@@ -2,10 +2,7 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
@@ -17,39 +14,16 @@
 
 <VBox alignment="TOP_CENTER" spacing="10" stylesheets="@/com/halime/checkers/css/game.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.halime.checkers.controller.GameController">
 
-  <MenuBar prefWidth="856.0" VBox.vgrow="NEVER">
-    <menus>
-      <Menu text="File">
-        <items>
-          <MenuItem text="New" />
-          <MenuItem text="Open…" />
-          <MenuItem text="Save" />
-          <SeparatorMenuItem />
-          <MenuItem text="Quit" />
-        </items>
-      </Menu>
-      <Menu text="Edit">
-        <items>
-          <MenuItem text="Undo" />
-          <MenuItem text="Redo" />
-        </items>
-      </Menu>
-      <Menu text="Help">
-        <items>
-          <MenuItem text="About" />
-        </items>
-      </Menu>
-    </menus>
-  </MenuBar>
+  <MenuBar prefWidth="856.0" VBox.vgrow="NEVER" />
 
   <HBox alignment="CENTER" prefHeight="30.0" prefWidth="756.0" spacing="20" />
 
   <AnchorPane fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0" VBox.vgrow="ALWAYS">
-    <Rectangle arcHeight="5.0" arcWidth="5.0" height="660.0" layoutX="235.0" layoutY="57.0" stroke="BLACK" strokeType="INSIDE" width="905.0" />
-    <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffedec" height="161.0" layoutX="14.0" layoutY="250.0" stroke="BLACK" strokeType="INSIDE" width="178.0" />
+    <Rectangle arcHeight="5.0" arcWidth="5.0" height="660.0" layoutX="235.0" layoutY="57.0" stroke="BLACK" strokeType="INSIDE" width="910.0" />
+    <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#ffedec" height="214.0" layoutX="14.0" layoutY="250.0" stroke="BLACK" strokeType="INSIDE" strokeWidth="3.0" width="197.0" />
 
     <!-- Turn label -->
-    <Label fx:id="turnLabel" layoutX="23.0" layoutY="252.0" prefHeight="135.0" prefWidth="161.0" styleClass="turn-label" text="Turn: Red">
+    <Label fx:id="turnLabel" layoutX="20.0" layoutY="250.0" prefHeight="231.0" prefWidth="204.0" styleClass="turn-label" text="Turn: Red" wrapText="true">
       <font>
         <Font size="24.0" />
       </font>
@@ -78,12 +52,7 @@
         <RowConstraints percentHeight="12.5" />
       </rowConstraints>
     </GridPane>
-      <Button fx:id="playAgainButton" layoutX="46.0" layoutY="547.0" onAction="#handlePlayAgain" styleClass="restart-button" text="Play Again" visible="false" />
-      <Label fx:id="statusLabel" layoutX="35.0" layoutY="447.0" prefHeight="88.0" prefWidth="144.0" styleClass="turn-label" text="You WIN!">
-         <font>
-            <Font size="24.0" />
-         </font>
-      </Label>
+      <Button fx:id="playAgainButton" layoutX="30.0" layoutY="547.0" onAction="#handlePlayAgain" styleClass="restart-button" text="Play Again" visible="false" />
 
   </AnchorPane>
 </VBox>

@@ -34,61 +34,27 @@
 
 <?import javafx.scene.Group?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.paint.Color?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" stylesheets="@../css/game.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.halime.checkers.controller.DifficultyController">
+<VBox prefHeight="800.0" prefWidth="1200.0" stylesheets="@../css/game.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.halime.checkers.controller.DifficultyController">
   <children>
-    <MenuBar VBox.vgrow="NEVER">
-      <menus>
-        <Menu mnemonicParsing="false" text="File">
-          <items>
-            <MenuItem mnemonicParsing="false" text="New" />
-            <MenuItem mnemonicParsing="false" text="Open…" />
-            <Menu mnemonicParsing="false" text="Open Recent" />
-            <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Close" />
-            <MenuItem mnemonicParsing="false" text="Save" />
-            <MenuItem mnemonicParsing="false" text="Save As…" />
-            <MenuItem mnemonicParsing="false" text="Revert" />
-            <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Preferences…" />
-            <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Quit" />
-          </items>
-        </Menu>
-        <Menu mnemonicParsing="false" text="Edit">
-          <items>
-            <MenuItem mnemonicParsing="false" text="Undo" />
-            <MenuItem mnemonicParsing="false" text="Redo" />
-            <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Cut" />
-            <MenuItem mnemonicParsing="false" text="Copy" />
-            <MenuItem mnemonicParsing="false" text="Paste" />
-            <MenuItem mnemonicParsing="false" text="Delete" />
-            <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Select All" />
-            <MenuItem mnemonicParsing="false" text="Unselect All" />
-          </items>
-        </Menu>
-        <Menu mnemonicParsing="false" text="Help">
-          <items>
-            <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
-          </items>
-        </Menu>
-      </menus>
-    </MenuBar>
-    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+    <MenuBar VBox.vgrow="NEVER" />
+    <AnchorPane prefHeight="800.0" prefWidth="1200.0" VBox.vgrow="ALWAYS">
       <children>
-            <Button id="playNowButton" fx:id="playNowButton" layoutX="203.0" layoutY="275.0" mnemonicParsing="false" onAction="#handlePlayNowButton" prefHeight="56.0" prefWidth="203.0" text="Play Now">
+            <ImageView fitHeight="146.0" fitWidth="634.0" layoutX="305.0" layoutY="79.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../images/difficulty%20text.png" />
+               </image>
+            </ImageView>
+            <Button id="playNowButton" fx:id="playNowButton" layoutX="432.0" layoutY="610.0" mnemonicParsing="false" onAction="#handlePlayNowButton" prefHeight="85.0" prefWidth="335.0" text="Play Now">
                <font>
                   <Font name="Nirmala UI Bold" size="27.0" />
                </font>
@@ -100,7 +66,7 @@
                   </DropShadow>
                </effect></Button>
 
-            <ToggleButton id="easyToggle" fx:id="easyToggle" layoutX="235.0" layoutY="35.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="138.0" stylesheets="@../css/game.css" text="Easy">
+            <ToggleButton id="easyToggle" fx:id="easyToggle" layoutX="460.0" layoutY="225.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="280.0" stylesheets="@../css/game.css" text="Easy">
                <font>
                   <Font name="Nirmala UI" size="26.0" />
                </font>
@@ -111,7 +77,7 @@
                      </color>
                   </DropShadow>
                </effect></ToggleButton>
-            <ToggleButton id="mediumToggle" fx:id="mediumToggle" layoutX="235.0" layoutY="114.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="138.0" stylesheets="@../css/game.css" text="Medium">
+            <ToggleButton id="mediumToggle" fx:id="mediumToggle" layoutX="459.0" layoutY="344.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="280.0" stylesheets="@../css/game.css" text="Medium">
                <font>
                   <Font name="Nirmala UI" size="25.0" />
                </font>
@@ -123,7 +89,7 @@
                   </DropShadow>
                </effect></ToggleButton>
             <Group layoutX="235.0" layoutY="191.0" />
-            <ToggleButton id="hardToogle" fx:id="hardToggle" layoutX="235.0" layoutY="191.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="138.0" stylesheets="@../css/game.css" text="Hard">
+            <ToggleButton id="hardToogle" fx:id="hardToggle" layoutX="459.0" layoutY="458.0" mnemonicParsing="false" prefHeight="71.0" prefWidth="280.0" stylesheets="@../css/game.css" text="Hard">
                <font>
                   <Font name="Nirmala UI Bold" size="26.0" />
                </font>

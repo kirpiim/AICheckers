@@ -10,14 +10,15 @@
 }
 
 .turn-label {
-    -fx-font-size: 20px;
-    -fx-text-fill: #2980b9;
+    -fx-font-size: 25px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #000000;
     -fx-font-family: "Consolas", "Courier New", monospace;
 }
 
 /* Common retro button style */
 .button, .toggle-button {
-    -fx-font-size: 14px;
+    -fx-font-size: 24px;
     -fx-font-family: "Consolas", "Courier New", monospace;
     -fx-text-fill: white;
     -fx-background-color: #7c9bba;   /* Default */
