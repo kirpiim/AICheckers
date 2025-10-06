@@ -54,24 +54,15 @@ public class Board {
     }
 
     public void movePiece(Piece piece, int newRow, int newCol) {
+        if (piece == null) return;
         int oldRow = piece.getRow();
         int oldCol = piece.getCol();
-
-        board[oldRow][oldCol] = null;
-
-        // Set new position on the piece
-        piece.setRow(newRow);
-        piece.setCol(newCol);
-
-        // Place it on board
-        setPiece(newRow, newCol, piece);
-
-        // Promote to King
-        if ((piece.isRed() && newRow == 0) || (!piece.isRed() && newRow == 7)) {
-            piece.setKing(true);
-            System.out.println("Promoted to KING!");
-        }
+        setPiece(oldRow, oldCol, null);      // clears old cell
+        setPiece(newRow, newCol, piece);     // setPiece updates row/col on the Piece
     }
+
+
+
     public List<int[]> getJumpMoves(Piece piece) {
         List<int[]> jumpMoves = new ArrayList<>();
         int row = piece.getRow();
@@ -120,26 +111,25 @@ public class Board {
         return newBoard;
     }
 
-    public void makeMove(Move move) {
+    // Move by coordinates from a Move object; no capture removal, no promotion here.
+// applySingleMove in GameController will handle capture removal and promotion.
+
+    public Piece makeMove(Move move) {
         Piece piece = getPiece(move.getStartRow(), move.getStartCol());
-        if (piece == null) return;
+        if (piece == null) return null;
 
-        // Remove from old position
         setPiece(move.getStartRow(), move.getStartCol(), null);
-
-        // Place piece in new position
         setPiece(move.getEndRow(), move.getEndCol(), piece);
 
-        // Handle captures
-        for (Piece captured : move.getCapturedPieces()) {
-            setPiece(captured.getRow(), captured.getCol(), null);
-        }
+        // ✅ Update piece’s row/col
+        piece.setRow(move.getEndRow());
+        piece.setCol(move.getEndCol());
 
-        // Crown promotion
-        if ((piece.isRed() && move.getEndRow() == 0) || (!piece.isRed() && move.getEndRow() == 7)) {
-            piece.setKing(true);
-        }
+        return piece;
     }
+
+
+
     private boolean isValidPosition(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
@@ -188,62 +178,76 @@ public class Board {
         }
     }
 
+    // Entry point
     private void addCaptureMoves(List<Move> moves, Piece piece, int row, int col) {
-        int[][] directions;
+        // Start recursive search with a fresh base move
+        addCaptureMoves(moves, piece, row, col, new Move(row, col, row, col));
+    }
 
-        if (piece.isKing()) {
-            // Kings can move in all directions
-            directions = new int[][] {
-                    {-1, -1}, {-1, 1}, {1, -1}, {1, 1}
-            };
-        } else {
-            // Normal pieces can only move forward
-            int direction = piece.isRed() ? -1 : 1;
-            directions = new int[][] {
-                    {direction, -1}, {direction, 1}
-            };
-        }
+    // Recursive version that carries the chain
+    private void addCaptureMoves(List<Move> moves, Piece piece, int row, int col, Move currentChain) {
+        int[][] directions = piece.isKing() ?
+                new int[][]{{-1,-1}, {-1,1}, {1,-1}, {1,1}} :
+                new int[][]{ {piece.isRed() ? -1 : 1, -1}, {piece.isRed() ? -1 : 1, 1} };
+
+        boolean extended = false;
 
         for (int[] dir : directions) {
             int midRow = row + dir[0];
             int midCol = col + dir[1];
-            int landingRow = row + dir[0] * 2;
-            int landingCol = col + dir[1] * 2;
+            int landingRow = row + 2 * dir[0];
+            int landingCol = col + 2 * dir[1];
 
             if (isValidPosition(landingRow, landingCol) && getPiece(landingRow, landingCol) == null) {
                 Piece middlePiece = getPiece(midRow, midCol);
                 if (middlePiece != null && middlePiece.isRed() != piece.isRed()) {
-                    Move captureMove = new Move(piece.getRow(), piece.getCol(), landingRow, landingCol);
-                    captureMove.addCapturedPiece(middlePiece);
-                    moves.add(captureMove);
+                    // Build new extended move chain
+                    Move newChain = new Move(currentChain);
+                    newChain.addStep(landingRow, landingCol);
+                    newChain.addCapturedPiece(middlePiece);
+
+                    // --- Simulate move ---
+                    Piece temp = getPiece(row, col);
+                    Piece captured = getPiece(midRow, midCol);
+
+                    setPiece(row, col, null);
+                    setPiece(midRow, midCol, null);
+                    setPiece(landingRow, landingCol, temp);
+
+                    // Recursive search for further jumps
+                    addCaptureMoves(moves, temp, landingRow, landingCol, newChain);
+
+                    // --- Undo ---
+                    setPiece(row, col, temp);
+                    setPiece(midRow, midCol, captured);
+                    setPiece(landingRow, landingCol, null);
+
+                    extended = true;
                 }
             }
         }
+
+        // If no further extensions, add the chain if it's more than the starting stub
+        if (!extended && currentChain.getCapturedPieces().size() > 0) {
+            moves.add(currentChain);
+        }
     }
+
+
 
     public boolean isGameOver() {
         // If either side has no pieces, game over
         if (!hasPieces(true) || !hasPieces(false)) return true;
 
         // If either side has no legal moves, game over
-        if (getAllValidMoves(true).isEmpty()) return true;   // Red stuck
-        if (getAllValidMoves(false).isEmpty()) return true;  // Black stuck
-
-        // Big Shot auto-win rule: if a Big Shot is now a King, game ends
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                Piece p = board[r][c];
-                if (p != null && p.isBigShot() && p.isKing()) {
-                    System.out.println("Big Shot became King! Game over.");
-                    return true;
-                }
-            }
-        }
+        if (getAllValidMoves(true).isEmpty()) return true;
+        if (getAllValidMoves(false).isEmpty()) return true;
 
         return false;
     }
 
-    private boolean hasPieces(boolean isRed) {
+
+    public boolean hasPieces(boolean isRed) {
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
                 Piece p = board[r][c];
